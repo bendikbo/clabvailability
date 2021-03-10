@@ -1,16 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #CLAB AVAILABILITY CHECKER UTILITY SCRIPT
 #Written by: Bendik Bogfjellmo (bendik.bogfjellmo@gmail.com)
-#Feel free to use this stuff later on
-#Don't be overly critical of this script as a fucking monkey could've written this piece of fucking garbage
-#I guess I'm just the one monkey that actually did write it
-#If you don't like it, send me a message for suggested improvements, or even better: email me an implementation
-#Procedurally written since I CBA to look up how to write bash functions for the 27th time
-
-#This became a bit over engineered because I didn't feel like working on my master thesis
+#Feel free to use this stuff later on, but don't blame me if it fucks your shit up
 
 
+#If you have any feature requests or improvement ideas, just email me a wish or an implementation
+#I know this script is a piece of procedurally written garbage, but CBA to look up bash function syntax for the 27th time
+#Besides, it works on my machine, so IDC ;)
 
 
 #Get requested user mode
@@ -53,6 +50,9 @@ if [ "$MODE" = "INTERACTIVE" ] || [ "$MODE" = "STATUS" ]; then
 		echo "enter ntnu-username:"
 		read
 		USERNAME=$REPLY
+		echo
+		echo "If you're worried I'm gonna steal ya password, just check out the variable declared at line 56 in the script"
+		echo
 		echo "enter ntnu-password:"
 		read -s
 		PASSWORD=$REPLY
@@ -83,21 +83,28 @@ if [ "$MODE" == "INTERACTIVE" ] && [ "$VALID" == "TRUE" ]; then
 
 	echo "Looking for available machine to connect to..."
 	CONNECTED=""
-	LOOPED_ONCE=""
+	declare -i LOOP_COUNTER=0
 	while [ "$CONNECTED" == "" ]; do
-		if [ "$LOOPED_ONCE" == "TRUE" ]; then
-			echo "Best chill out for a while, looks like all the machines are busy"
+		if [ "$LOOP_COUNTER" == "1" ]; then #If for loop has looped once, it means all machines are busy, so give the user some fun feedback as they're probably having a bad time
+			echo "Looks like all the machines are busy, best just chill out for a while"
+			sleep 2
 			echo "grab some coffee, tea, a snack, or something like that."
+			sleep 3
 			echo "I'll just loop through the machines in the meantime to find one for ya,"
+			sleep 4
+			echo "Don't worry, I'll update you along the way, so you know I'm not slacking off"
+			sleep 5
 			echo "I think I'm a bit faster than you, so best just leave it to me ;)"
-			LOOPED_ONCE="FALSE"
+			sleep 5
+			echo "Alright, back to work (for me)"
+			sleep 4
 		fi
 		for NO in ${SHUFFLED_MACHINE_LIST}
 		do
 			USERS=$(sshpass -p $PASSWORD ssh ${USERNAME}@clab${NO}.idi.ntnu.no users)
 			if [ "$USERS" == "" ]; then
 				SLURMCHECK=$(sshpass -p $PASSWORD ssh ${USERNAME}@clab${RANDOM_MACHINE}.idi.ntnu.no whoami)
-				if [ "$SLURMCHECK" != *"USERNAME"* ]; then
+				if [ "$SLURMCHECK" != *"$USERNAME"* ]; then
 					echo "Machine no. $NO is available!"
 					sshpass -p $PASSWORD ssh ${USERNAME}@clab${NO}.idi.ntnu.no -oStrictHostKeyChecking=no
 					sleep 1
@@ -106,9 +113,11 @@ if [ "$MODE" == "INTERACTIVE" ] && [ "$VALID" == "TRUE" ]; then
 				fi
 			fi
 		done
-		if [ "$LOOPED_ONCE" == "" ]; then
-			LOOPED_ONCE="TRUE"
+		if [ "$LOOP_COUNTER" -gt "1" ];then
+			clear
+			echo "So far, I've checked through all the machines in the lab $LOOP_COUNTER times"
 		fi
+		LOOP_COUNTER=$((LOOP_COUNTER+1))
 	done
 fi
 
@@ -121,7 +130,7 @@ if [ "$MODE" == "HELP" ]; then
 	echo
 	echo "-s/-S/--Status/--status to just view status and not connect"
 	echo
-	echo "(default) or -i/-I/-Interactive/-interactive to make script connect for you" 
+	echo "(default) or -i/-I/--Interactive/--interactive to make script connect for you" 
 	echo
 	echo "If you've found a bug or have any other problems,"
 	echo "just email me at bendik.bogfjellmo@gmail.com"
